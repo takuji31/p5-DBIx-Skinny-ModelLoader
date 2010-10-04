@@ -19,7 +19,7 @@ sub import {
 
     if ( scalar @args >= 2 && @args[0] eq '-base' ) {
         {
-            no strict 'refs';
+            no strict 'refs'; ##no critic
             push @{"$caller\::ISA"},$class;
         }
         $caller->mk_classdata('skinny');
