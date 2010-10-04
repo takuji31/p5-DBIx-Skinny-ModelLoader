@@ -9,7 +9,7 @@ sub call_method {
     my $class     = shift;
     my $method    = shift;
     my $tablename = $class->call_table_name;
-    $class->$method(@_);
+    $class->$method($tablename,@_);
 }
 
 sub import {
@@ -17,7 +17,7 @@ sub import {
     my $caller = caller;
     my @args   = @_;
 
-    if ( scalar @args >= 2 && @args[0] eq '-base' ) {
+    if ( scalar @args >= 2 && $args[0] eq '-base' ) {
         {
             no strict 'refs'; ##no critic
             push @{"$caller\::ISA"},$class;
@@ -26,7 +26,7 @@ sub import {
         $caller->mk_classdata('call_table_name');
         my @functions
             = qw/insert create bulk_insert  update delete find_or_create find_or_insert search search_rs single count data2itr find_or_new/;
-        for my $function ($functions) {
+        for my $function (@functions) {
             *{"$caller\::$function"} = sub {
                 my $class = shift;
                 call_method($class,@_);
@@ -42,7 +42,8 @@ sub import {
             if(defined $model_name){
                 $class->call_table_name(decamelize($model_name));
             }
-        }
+            return $class;
+        };
         *{"$caller\::model"} = $model_loader;
     }
 
@@ -53,10 +54,11 @@ sub guess_package_name {
 }
 
 sub AUTOLOAD {
+    my $class = shift;
     our $AUTOLOAD;
     my $method = $AUTOLOAD;
     $method =~ s/.*:://;
-    $self->skinny->$method(@_);
+    $class->skinny->$method(@_);
 }
 
 1;
