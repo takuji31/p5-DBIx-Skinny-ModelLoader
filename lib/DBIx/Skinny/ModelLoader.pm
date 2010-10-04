@@ -1,6 +1,7 @@
 package DBIx::Skinny::ModelLoader;
 use strict;
 use warnings;
+use UNIVERSAL::require;
 our $VERSION = '0.01';
 use base qw/Class::Data::Inheritable/;
 use String::CamelCase qw/decamelize/;
@@ -19,13 +20,17 @@ sub import {
     my @args   = @_;
     my $model = $class;
 
-    if ( (scalar @args) >= 1 && $args[0] eq '-base' ) {
+    if ( (scalar @args) >= 1 && $args[0] eq 'setup' ) {
         $model = $caller;
         {
             no strict 'refs'; ##no critic
             push @{"$caller\::ISA"},$class;
         }
         $caller->mk_classdata('skinny');
+        my $params = $args[1];
+        if(defined $params && defined $params->{skinny}){
+            $caller->skinny($params->{skinny});
+        }
         $caller->mk_classdata('call_table_name');
         my @functions
             = qw/insert create bulk_insert update delete find_or_create find_or_insert search search_rs single count data2itr find_or_new/;
