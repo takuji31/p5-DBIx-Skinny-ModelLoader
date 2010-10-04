@@ -43,9 +43,10 @@ sub import {
         no warnings 'redefine'; ##no critic
 
         my $model_loader = sub {
-            my $model_name = $_[1];
+            my $model_name = $_[0];
             if(defined $model_name){
-                $model->call_table_name(decamelize($model_name));
+                my $table_name = decamelize($model_name);
+                $model->call_table_name($table_name);
             }
             return $model;
         };
