@@ -9,15 +9,18 @@ sub call_method {
     my $class     = shift;
     my $method    = shift;
     my $tablename = $class->call_table_name;
-    $class->$method($tablename,@_);
+    $class->skinny->$method($tablename,@_);
 }
 
 sub import {
+
     my $class  = shift;
     my $caller = caller;
     my @args   = @_;
+    my $model = $class;
 
-    if ( scalar @args >= 2 && $args[0] eq '-base' ) {
+    if ( (scalar @args) >= 1 && $args[0] eq '-base' ) {
+        $model = $caller;
         {
             no strict 'refs'; ##no critic
             push @{"$caller\::ISA"},$class;
@@ -25,31 +28,29 @@ sub import {
         $caller->mk_classdata('skinny');
         $caller->mk_classdata('call_table_name');
         my @functions
-            = qw/insert create bulk_insert  update delete find_or_create find_or_insert search search_rs single count data2itr find_or_new/;
+            = qw/insert create bulk_insert update delete find_or_create find_or_insert search search_rs single count data2itr find_or_new/;
         for my $function (@functions) {
+            no strict 'refs'; ##no critic
             *{"$caller\::$function"} = sub {
-                my $class = shift;
-                call_method($class,@_);
+                my $self = shift;
+                $caller->call_method($function,@_);
             }
         }
     }
 
     {
         no strict 'refs'; ##no critic
+        no warnings 'redefine'; ##no critic
 
         my $model_loader = sub {
-            my ($class, $model_name) = @_;
+            my $model_name = $_[1];
             if(defined $model_name){
-                $class->call_table_name(decamelize($model_name));
+                $model->call_table_name(decamelize($model_name));
             }
-            return $class;
+            return $model;
         };
-        *{"$caller\::model"} = $model_loader;
+        *{"${caller}\::model"} = $model_loader;
     }
-
-}
-
-sub guess_package_name {
 
 }
 
