@@ -2,12 +2,13 @@ package DBIx::Skinny::ModelLoader;
 use strict;
 use warnings;
 our $VERSION = '0.01';
-use base qw/Class::Data::Inheritable DBIx::Skinny/;
+use base qw/Class::Data::Inheritable/;
+use String::CamelCase qw/decamelize/;
 
 sub call_method {
     my $class     = shift;
     my $method    = shift;
-    my $tablename = shift;
+    my $tablename = $class->table_name;
     $class->$method(@_);
 }
 
@@ -22,6 +23,7 @@ sub import {
             push @{"$caller\::ISA"},$class;
         }
         $caller->mk_classdata('skinny');
+        $caller->mk_classdata('table_name');
         my @functions
             = qw/insert create bulk_insert  update delete find_or_create find_or_insert search search_rs single count data2itr find_or_new/;
         for my $function ($functions) {
@@ -30,6 +32,18 @@ sub import {
                 call_method($class,@_);
             }
         }
+    }
+
+    {
+        no strict 'refs'; ##no critic
+
+        my $model_loader = sub {
+            my ($class, $model_name) = @_;
+            if(defined $model_name){
+                $class->table_name(decamelize($model_name));
+            }
+        }
+        *{"$caller\::model"} = $model_loader;
     }
 
 }
