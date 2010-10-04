@@ -8,7 +8,7 @@ use String::CamelCase qw/decamelize/;
 sub call_method {
     my $class     = shift;
     my $method    = shift;
-    my $tablename = $class->table_name;
+    my $tablename = $class->call_table_name;
     $class->$method(@_);
 }
 
@@ -23,7 +23,7 @@ sub import {
             push @{"$caller\::ISA"},$class;
         }
         $caller->mk_classdata('skinny');
-        $caller->mk_classdata('table_name');
+        $caller->mk_classdata('call_table_name');
         my @functions
             = qw/insert create bulk_insert  update delete find_or_create find_or_insert search search_rs single count data2itr find_or_new/;
         for my $function ($functions) {
@@ -40,7 +40,7 @@ sub import {
         my $model_loader = sub {
             my ($class, $model_name) = @_;
             if(defined $model_name){
-                $class->table_name(decamelize($model_name));
+                $class->call_table_name(decamelize($model_name));
             }
         }
         *{"$caller\::model"} = $model_loader;
