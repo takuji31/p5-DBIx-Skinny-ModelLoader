@@ -4,11 +4,35 @@ DBIx::Skinny::ModelLoader -
 
 =head1 SYNOPSIS
 
-  use DBIx::Skinny::ModelLoader;
+  package Hoge::DB::Main;
+  use DBIx::Skinny;
+
+  package Hoge::Model;
+  use DBIx::Skinny::ModelLoader setup => {
+      skinny => container('db') # instance
+  };
+
+  package Hoge::Page::Hoge;
+  use Hoge::Model;
+
+  sub dispatch_hoge {
+
+    #Hoge::Model
+    my $model = model;
+
+
+    #Like $model->insert('user',{id => 1, name => 'hoge'});
+    #returns DBIx::Skinny::Row
+    my $user = model('User')->create({id => 1,name => 'hoge'});
+
+    #Like $model->search('user',{id => 1});
+    #returns DBIx::Skinny::Row
+    my $login_user = model('User')->({id => 1});
+  }
 
 =head1 DESCRIPTION
 
-DBIx::Skinny::ModelLoader is
+DBIx::Skinny::ModelLoader is a Model Loader for DBIx::Skinny
 
 =head1 AUTHOR
 
