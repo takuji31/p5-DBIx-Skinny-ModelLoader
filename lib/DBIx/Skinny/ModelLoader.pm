@@ -69,7 +69,7 @@ sub import {
                 my $table_name = decamelize($model_name);
                 $model->call_table_name($table_name);
             }
-            return $model;
+            return $model->skinny;
         };
         *{"${caller}\::model"} = $model_loader;
     }
