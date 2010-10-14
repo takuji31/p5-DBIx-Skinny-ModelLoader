@@ -106,7 +106,7 @@ DBIx::Skinny::ModelLoader -
 
   sub dispatch_hoge {
 
-    #Hoge::Model
+    #instance of Hoge::DB::Main
     my $model = model;
 
 
