@@ -102,6 +102,8 @@ sub AUTOLOAD {
     $class->skinny->$method(@_);
 }
 
+sub DESTROY {}
+
 1;
 __END__
 
