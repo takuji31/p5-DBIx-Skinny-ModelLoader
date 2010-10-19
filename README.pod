@@ -20,14 +20,17 @@ DBIx::Skinny::ModelLoader -
     #instance of Hoge::DB::Main
     my $model = model;
 
+    #instance of Hoge::Model
+    my $fuga = model('Fuga');
 
-    #Like $model->insert('user',{id => 1, name => 'hoge'});
+    #Like $model->create('user',{id => 1, name => 'hoge'});
     #returns DBIx::Skinny::Row
     my $user = model('User')->create({id => 1,name => 'hoge'});
 
     #Like $model->search('user',{id => 1});
     #returns DBIx::Skinny::Row
-    my $login_user = model('User')->({id => 1});
+    my $login_user = model('User')->search({id => 1});
+
   }
 
 =head1 DESCRIPTION
