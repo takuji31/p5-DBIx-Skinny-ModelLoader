@@ -2,19 +2,30 @@ package DBIx::Skinny::ModelLoader;
 use strict;
 use warnings;
 use UNIVERSAL::require;
-our $VERSION = '0.01';
-use base qw/Class::Data::Inheritable/;
+use base qw/Class::Data::Inheritable Class::Accessor::Fast/;
 use String::CamelCase qw/decamelize/;
 
+our $VERSION = '0.01';
+
+sub new {
+    my ( $class, $args ) = @_;
+    bless $args, $class;
+}
+
 sub call_method {
-    my $class     = shift;
+    my $self      = shift;
     my $method    = shift;
-    my $tablename = $class->call_table_name;
-    $class->skinny->$method( $tablename, @_ );
+    my $tablename = $self->_table_name;
+    $self->skinny->$method( $tablename, @_ );
+}
+
+sub instance_table : lvalue {
+    my $class = shift;
+    my $table = $class->_instance_table;
+    $table;
 }
 
 sub import {
-
     my $class  = shift;
     my $caller = caller;
     my @args   = @_;
@@ -27,6 +38,8 @@ sub import {
             push @{"$caller\::ISA"}, $class;
         }
         $caller->mk_classdata('skinny');
+        $caller->mk_classdata(_instance_table => {});
+        $caller->mk_accessors(qw/_table_name/);
         my $params = $args[1];
         if ( $params && defined $params->{skinny} ) {
             $caller->skinny( $params->{skinny} );
@@ -47,14 +60,13 @@ sub import {
             }
             $caller->skinny($skinny_obj);
         }
-        $caller->mk_classdata('call_table_name');
-        my @functions =
-          qw/insert create bulk_insert update delete find_or_create find_or_insert search search_rs single count data2itr find_or_new/;
+        my @functions = qw/insert create bulk_insert update delete find_or_create find_or_insert 
+            search search_rs single count data2itr find_or_new/;
         for my $function (@functions) {
             no strict 'refs';    ##no critic
             *{"$caller\::$function"} = sub {
                 my $self = shift;
-                $caller->call_method( $function, @_ );
+                $self->call_method( $function, @_ );
               }
         }
     }
@@ -67,7 +79,13 @@ sub import {
             my $model_name = $_[0];
             if ($model_name) {
                 my $table_name = decamelize($model_name);
-                $model->call_table_name($table_name);
+                my $instance   = $model->instance_table->{$table_name};
+                unless ($instance) {
+                    $instance = $model->new( { _table_name => $table_name } );
+                    $model->instance_table->{$table_name} = $instance;
+                }
+                $instance->_table_name($table_name);
+                return $instance;
             }
             return $model->skinny;
         };
@@ -109,14 +127,17 @@ DBIx::Skinny::ModelLoader -
     #instance of Hoge::DB::Main
     my $model = model;
 
+    #instance of Hoge::Model
+    my $fuga = model('Fuga');
 
-    #Like $model->insert('user',{id => 1, name => 'hoge'});
+    #Like $model->create('user',{id => 1, name => 'hoge'});
     #returns DBIx::Skinny::Row
     my $user = model('User')->create({id => 1,name => 'hoge'});
 
     #Like $model->search('user',{id => 1});
     #returns DBIx::Skinny::Row
-    my $login_user = model('User')->({id => 1});
+    my $login_user = model('User')->search({id => 1});
+
   }
 
 =head1 DESCRIPTION
