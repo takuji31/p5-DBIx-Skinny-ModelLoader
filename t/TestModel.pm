@@ -2,12 +2,10 @@ package  TestModel;
 use strict;
 use warnings;
 
-unlink './t/test.db' if -f './t/test.db';
-
 use DBIx::Skinny::ModelLoader setup => {
     skinny => TestDB->new(
         {
-            dsn             => 'dbi:SQLite:./t/test.db',
+            dsn             => 'dbi:SQLite:dbname=:memory:',
             username        => '',
             password        => '',
             connect_options => { AutoCommit => 1 },
