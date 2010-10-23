@@ -7,7 +7,6 @@ use TestModel;
 model->_setup_test_db;
 
 my $model = model;
-$model->_setup_test_db;
 isa_ok $model, 'TestDB';
 
 my $mock = model('Mock');
