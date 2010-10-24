@@ -62,6 +62,10 @@ sub import {
         }
         my @functions = qw/insert create bulk_insert update delete find_or_create find_or_insert 
             search search_rs single count data2itr find_or_new/;
+        my $methods = $params->{methods};
+        if( $params && $methods && ref($methods) eq 'ARRAY' ){
+            @functions = (@functions, @$methods);
+        }
         for my $function (@functions) {
             no strict 'refs';    ##no critic
             *{"$caller\::$function"} = sub {
