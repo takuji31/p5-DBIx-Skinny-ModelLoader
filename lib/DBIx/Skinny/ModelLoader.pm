@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Class::Data::Inheritable Class::Accessor::Fast/;
-use String::CamelCase qw/decamelize/;
+use String::CamelCase qw/camelize decamelize/;
 
 our $VERSION = '0.01';
 
@@ -31,6 +31,7 @@ sub import {
     my @args   = @_;
     my $model  = $class;
 
+    #Model class setup
     if ( ( scalar @args ) >= 2 && $args[0] eq 'setup' ) {
         $model = $caller;
         {
@@ -73,7 +74,26 @@ sub import {
                 $self->call_method( $function, @_ );
               }
         }
+
+        #Row Class Remap
+        my $row_class_remap = $params->{row_class_remap};
+        if($row_class_remap) {
+            for my $table (keys %{$caller->skinny->schema->schema_info}){
+                my $row_class = "$caller\::".camelize($table);
+                $row_class->require or next;
+                $caller->skinny->attribute->{row_class_map}->{$table} = $row_class;
+            }
+        }
     }
+
+    #Row class setup
+    if ( ( scalar @args ) == 1 && $args[0] eq '-base' ) {
+        {
+            no strict 'refs';    ##no critic
+            push @{"$caller\::ISA"}, 'DBIx::Skinny::Row';
+        }
+    }
+
 
     {
         no strict 'refs';          ##no critic
