@@ -63,7 +63,7 @@ sub import {
         }
         my @functions = qw/insert create bulk_insert update delete find_or_create find_or_insert 
             search search_rs single count data2itr find_or_new/;
-        my $methods = $params->{methods};
+        my $methods = $params->{mixin_methods};
         if( $params && $methods && ref($methods) eq 'ARRAY' ){
             @functions = (@functions, @$methods);
         }
