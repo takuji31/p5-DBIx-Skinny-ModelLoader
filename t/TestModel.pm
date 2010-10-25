@@ -11,5 +11,6 @@ use DBIx::Skinny::ModelLoader setup => {
             connect_options => { AutoCommit => 1 },
         }
     ),
+    mixin_methods => ['hello'],
 };
 1;
