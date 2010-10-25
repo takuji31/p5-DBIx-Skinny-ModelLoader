@@ -1,4 +1,6 @@
 package TestDB;
+use strict;
+use warnings;
 use DBIx::Skinny;
 
 sub _setup_test_db {
