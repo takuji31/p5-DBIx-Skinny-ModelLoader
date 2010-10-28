@@ -39,7 +39,7 @@ sub import {
             push @{"$caller\::ISA"}, $class;
         }
         $caller->mk_classdata('skinny');
-        $caller->mk_classdata(_instance_table => {});
+        $caller->mk_classdata( _instance_table => {} );
         $caller->mk_accessors(qw/_table_name/);
         my $params = $args[1];
         if ( $params && defined $params->{skinny} ) {
@@ -49,8 +49,9 @@ sub import {
 
             #Skinny setup
             my $skinny_class = $params->{class}
-              or die 'Parameter skinny or class required!';
-            $skinny_class->require or die "Class $skinny_class does not exists";
+                or die 'Parameter skinny or class required!';
+            $skinny_class->require
+                or die "Class $skinny_class does not exists";
             my $conf = $params->{conf} || {};
 
             my $skinny_obj = $skinny_class->new($conf);
@@ -61,27 +62,29 @@ sub import {
             }
             $caller->skinny($skinny_obj);
         }
-        my @functions = qw/insert create bulk_insert update delete find_or_create find_or_insert 
+        my @functions
+            = qw/insert create bulk_insert update delete find_or_create find_or_insert
             search search_rs single count data2itr find_or_new/;
         my $methods = $params->{mixin_methods};
-        if( $params && $methods && ref($methods) eq 'ARRAY' ){
-            @functions = (@functions, @$methods);
+        if ( $params && $methods && ref($methods) eq 'ARRAY' ) {
+            @functions = ( @functions, @$methods );
         }
         for my $function (@functions) {
             no strict 'refs';    ##no critic
             *{"$caller\::$function"} = sub {
                 my $self = shift;
                 $self->call_method( $function, @_ );
-              }
+                }
         }
 
         #Row Class Remap
         my $row_class_remap = $params->{row_class_remap};
-        if($row_class_remap) {
-            for my $table (keys %{$caller->skinny->schema->schema_info}){
-                my $row_class = "$caller\::".camelize($table);
+        if ($row_class_remap) {
+            for my $table ( keys %{ $caller->skinny->schema->schema_info } ) {
+                my $row_class = "$caller\::" . camelize($table);
                 $row_class->require or next;
-                $caller->skinny->attribute->{row_class_map}->{$table} = $row_class;
+                $caller->skinny->attribute->{row_class_map}->{$table}
+                    = $row_class;
             }
         }
     }
@@ -93,7 +96,6 @@ sub import {
             push @{"$caller\::ISA"}, 'DBIx::Skinny::Row';
         }
     }
-
 
     {
         no strict 'refs';          ##no critic
@@ -115,18 +117,24 @@ sub import {
         };
         *{"${caller}\::model"} = $model_loader;
     }
+    return;
 
 }
 
 sub AUTOLOAD {
-    my $class = shift;
+    my $self = shift;
     our $AUTOLOAD;
     my $method = $AUTOLOAD;
     $method =~ s/.*:://;
-    $class->skinny->$method(@_);
+    {
+        no strict 'refs'; ##no critic
+        my $class = ref($self) ? ref($self) : $self;
+        *{"$class\::$method"} = sub { shift->skinny->$method(@_) };
+    }
+    return $self->$method(@_);
 }
 
-sub DESTROY {}
+sub DESTROY { }
 
 1;
 __END__
