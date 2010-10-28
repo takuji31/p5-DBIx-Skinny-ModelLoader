@@ -125,13 +125,12 @@ sub AUTOLOAD {
     my $self = shift;
     our $AUTOLOAD;
     my $method = $AUTOLOAD;
-    $method =~ s/.*:://;
+    ( my $method_name = $method ) =~ s/.*:://;
     {
-        no strict 'refs'; ##no critic
-        my $class = ref($self) ? ref($self) : $self;
-        *{"$class\::$method"} = sub { shift->skinny->$method(@_) };
+        no strict 'refs';    ##no critic
+        *{$method} = sub { shift->skinny->$method_name(@_) };
     }
-    return $self->$method(@_);
+    return $self->$method_name(@_);
 }
 
 sub DESTROY { }
