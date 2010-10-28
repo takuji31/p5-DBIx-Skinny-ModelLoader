@@ -8,6 +8,10 @@ sub register_method {
             my ($class, $table, $msg) = @_;
             return "Hello $table $msg";
         },
+        'helloworld' => sub {
+            my ($class, $msg) = @_;
+            return "Hello $msg World";
+        },
     };
 }
 
