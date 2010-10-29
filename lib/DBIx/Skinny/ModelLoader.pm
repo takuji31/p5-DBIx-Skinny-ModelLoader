@@ -16,7 +16,16 @@ sub call_method {
     my $self      = shift;
     my $method    = shift;
     my $tablename = $self->_table_name;
-    $self->skinny->$method( $tablename, @_ );
+    if( wantarray ){
+        my @result = $self->skinny->$method( $tablename, @_ );
+        return @result;
+    }
+    elsif ( defined wantarray ) {
+        my $result = $self->skinny->$method( $tablename, @_ );
+        return $result;
+    } else {
+        $self->skinny->$method( $tablename, @_ );
+    }
 }
 
 sub instance_table : lvalue {
