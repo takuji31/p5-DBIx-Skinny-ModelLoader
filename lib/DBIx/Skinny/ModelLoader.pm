@@ -79,7 +79,7 @@ sub import {
             *{"$caller\::$function"} = sub {
                 my $self = shift;
                 $self->call_method( $function, @_ );
-                }
+                };
         }
 
         #Row Class Remap
