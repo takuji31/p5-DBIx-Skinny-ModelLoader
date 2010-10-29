@@ -65,10 +65,6 @@ sub import {
 
             my $skinny_obj = $skinny_class->new($conf);
 
-            #init connect
-            if ( $params->{do} ) {
-                $skinny_obj->do( $params->{do} );
-            }
             $caller->skinny($skinny_obj);
         }
         my @functions
