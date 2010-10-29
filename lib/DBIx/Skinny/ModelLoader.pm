@@ -102,24 +102,24 @@ sub import {
         }
     }
 
+    my $model_loader = sub {
+        my $model_name = $_[0];
+        if ($model_name) {
+            my $table_name = decamelize($model_name);
+            my $instance   = $model->instance_table->{$table_name};
+            unless ($instance) {
+                $instance = $model->new( { _table_name => $table_name } );
+                $model->instance_table->{$table_name} = $instance;
+            }
+            $instance->_table_name($table_name);
+            return $instance;
+        }
+        return $model->skinny;
+    };
     {
         no strict 'refs';          ##no critic
         no warnings 'redefine';    ##no critic
 
-        my $model_loader = sub {
-            my $model_name = $_[0];
-            if ($model_name) {
-                my $table_name = decamelize($model_name);
-                my $instance   = $model->instance_table->{$table_name};
-                unless ($instance) {
-                    $instance = $model->new( { _table_name => $table_name } );
-                    $model->instance_table->{$table_name} = $instance;
-                }
-                $instance->_table_name($table_name);
-                return $instance;
-            }
-            return $model->skinny;
-        };
         *{"${caller}\::model"} = $model_loader;
     }
     return;
