@@ -91,7 +91,7 @@ sub import {
             {
                 no strict 'refs';
                 #export camelize function
-                *{"$class\::_camelize"} = \&DBIX::Skinny::_camelize;
+                *{"$class\::_camelize"} = \&DBIx::Skinny::_camelize;
             }
             for my $table ( keys %{ $caller->skinny->schema->schema_info } ) {
                 my $row_class = "$caller\::" . _camelize($table);
