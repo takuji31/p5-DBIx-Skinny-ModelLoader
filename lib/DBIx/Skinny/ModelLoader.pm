@@ -3,13 +3,16 @@ use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Class::Data::Inheritable Class::Accessor::Fast/;
-use String::CamelCase qw/camelize decamelize/;
+use String::CamelCase qw/decamelize/;
 
 our $VERSION = '0.01';
 
 sub new {
-    my ( $class, $args ) = @_;
-    bless $args, $class;
+    my ( $class, $model_name ) = @_;
+    my $table_name = decamelize($model_name);
+    bless {
+        _table_name => $table_name,
+    }, $class;
 }
 
 sub call_method {
@@ -85,8 +88,13 @@ sub import {
         #Row Class Remap
         my $row_class_remap = $params->{row_class_remap};
         if ($row_class_remap) {
+            {
+                no strict 'refs';
+                #export camelize function
+                *{"$class\::_camelize"} = \&DBIX::Skinny::_camelize;
+            }
             for my $table ( keys %{ $caller->skinny->schema->schema_info } ) {
-                my $row_class = "$caller\::" . camelize($table);
+                my $row_class = "$caller\::" . _camelize($table);
                 $row_class->require or next;
                 $caller->skinny->attribute->{row_class_map}->{$table}
                     = $row_class;
@@ -105,13 +113,11 @@ sub import {
     my $model_loader = sub {
         my $model_name = $_[0];
         if ($model_name) {
-            my $table_name = decamelize($model_name);
-            my $instance   = $model->instance_table->{$table_name};
+            my $instance   = $model->instance_table->{$model_name};
             unless ($instance) {
-                $instance = $model->new( { _table_name => $table_name } );
-                $model->instance_table->{$table_name} = $instance;
+                $instance = $model->new( $model_name );
+                $model->instance_table->{$model_name} = $instance;
             }
-            $instance->_table_name($table_name);
             return $instance;
         }
         return $model->skinny;
