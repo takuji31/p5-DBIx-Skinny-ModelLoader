@@ -19,16 +19,7 @@ sub call_method {
     my $self      = shift;
     my $method    = shift;
     my $tablename = $self->_table_name;
-    if( wantarray ){
-        my @result = $self->skinny->$method( $tablename, @_ );
-        return @result;
-    }
-    elsif ( defined wantarray ) {
-        my $result = $self->skinny->$method( $tablename, @_ );
-        return $result;
-    } else {
-        $self->skinny->$method( $tablename, @_ );
-    }
+    return $self->skinny->$method( $tablename, @_ );
 }
 
 sub instance_table : lvalue {
@@ -81,8 +72,8 @@ sub import {
             no strict 'refs';    ##no critic
             *{"$caller\::$function"} = sub {
                 my $self = shift;
-                $self->call_method( $function, @_ );
-                };
+                return $self->call_method( $function, @_ );
+            };
         }
 
         #Row Class Remap
@@ -139,7 +130,7 @@ sub AUTOLOAD {
     ( my $method_name = $method ) =~ s/.*:://;
     {
         no strict 'refs';    ##no critic
-        *{$method} = sub { shift->skinny->$method_name(@_) };
+        *{$method} = sub { return shift->skinny->$method_name(@_) };
     }
     return $self->$method_name(@_);
 }
