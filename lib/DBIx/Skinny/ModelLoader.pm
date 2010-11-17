@@ -2,30 +2,16 @@ package DBIx::Skinny::ModelLoader;
 use strict;
 use warnings;
 use UNIVERSAL::require;
-use base qw/Class::Data::Inheritable Class::Accessor::Fast/;
 use String::CamelCase qw/decamelize/;
+use base qw/Class::Data::Inheritable/;
 
 our $VERSION = '0.01';
 
-sub new {
-    my ( $class, $model_name ) = @_;
-    my $table_name = decamelize($model_name);
-    bless {
-        _table_name => $table_name,
-    }, $class;
-}
-
 sub call_method {
-    my $self      = shift;
+    my $class      = shift;
     my $method    = shift;
-    my $tablename = $self->_table_name;
-    return $self->skinny->$method( $tablename, @_ );
-}
-
-sub instance_table : lvalue {
-    my $class = shift;
-    my $table = $class->_instance_table;
-    $table;
+    my $tablename = $class->table_name;
+    return $class->skinny->$method( $tablename, @_ );
 }
 
 sub import {
@@ -42,8 +28,8 @@ sub import {
             push @{"$caller\::ISA"}, $class;
         }
         $caller->mk_classdata('skinny');
-        $caller->mk_classdata( _instance_table => {} );
-        $caller->mk_accessors(qw/_table_name/);
+        $caller->mk_classdata('table_name');
+        $caller->mk_classdata('model_table_map' => {});
         my $params = $args[1];
         if ( $params && defined $params->{skinny} ) {
             $caller->skinny( $params->{skinny} );
@@ -71,8 +57,8 @@ sub import {
         for my $function (@functions) {
             no strict 'refs';    ##no critic
             *{"$caller\::$function"} = sub {
-                my $self = shift;
-                return $self->call_method( $function, @_ );
+                my $class = shift;
+                return $class->call_method( $function, @_ );
             };
         }
 
@@ -85,7 +71,9 @@ sub import {
                 *{"$class\::_camelize"} = \&DBIx::Skinny::_camelize;
             }
             for my $table ( keys %{ $caller->skinny->schema->schema_info } ) {
-                my $row_class = "$caller\::" . _camelize($table);
+                my $model_name = _camelize($table);
+                $caller->model_table_map->{$model_name} = $table;
+                my $row_class  = "$caller\::" . $model_name;
                 $row_class->require or next;
                 $caller->skinny->attribute->{row_class_map}->{$table}
                     = $row_class;
@@ -104,12 +92,9 @@ sub import {
     my $model_loader = sub {
         my $model_name = $_[0];
         if ($model_name) {
-            my $instance   = $model->instance_table->{$model_name};
-            unless ($instance) {
-                $instance = $model->new( $model_name );
-                $model->instance_table->{$model_name} = $instance;
-            }
-            return $instance;
+            my $table_name = $model->model_table_map->{$model_name} || decamelize($model_name);
+            $model->table_name($table_name);
+            return $model;
         }
         return $model->skinny;
     };
@@ -124,7 +109,7 @@ sub import {
 }
 
 sub AUTOLOAD {
-    my $self = shift;
+    my $class = shift;
     our $AUTOLOAD;
     my $method = $AUTOLOAD;
     ( my $method_name = $method ) =~ s/.*:://;
@@ -132,7 +117,7 @@ sub AUTOLOAD {
         no strict 'refs';    ##no critic
         *{$method} = sub { return shift->skinny->$method_name(@_) };
     }
-    return $self->$method_name(@_);
+    return $class->$method_name(@_);
 }
 
 sub DESTROY { }
